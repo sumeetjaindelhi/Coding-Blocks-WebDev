@@ -1,0 +1,49 @@
+*{
+    font-size:15;
+}
+.heading{
+    background-color:blue;
+    color: white;
+}
+p{
+    background-color: orangered;
+    color: black;
+}
+.para
+{
+    background-color: slategrey;
+    color: orange}
+    /* Decendant selectors : element selector second element selector and */
+ div div{
+    background-color: salmon;
+ }
+ div div span {
+    background-color: violet;
+ }
+
+ /* Combinators*/
+ /* 1. DIRECT CHILD:" > " __>  ul>li{colour:orange}
+ /* 2. INTERMEDIATE SIBLINGS "+" Photo in phone -- same level pe hai and bhai hai toh sibling hai par continous aana chiye*/
+ /* 3. GENERAL SIBLINGS" ~" bhai hai and kahi aye toh bhai toh hai na*/
+
+ /* structural pseudoclass*/
+ /* li:first-child
+ {
+    color:blue}
+    */
+
+    /*
+    li:last-child
+    {
+        color:"black"}
+
+    */
+
+    /*
+    li:nth-child(2n+4) ---> means 4 se chalu karke 2 2 ka gap dena hai
+    + ve me niche jayega
+    -ve me upar jayega
+    (-3n+7) --> means 7 pe jake 3 3 ki upar jump marega
+    
+    {
+        color:"violet"*/
