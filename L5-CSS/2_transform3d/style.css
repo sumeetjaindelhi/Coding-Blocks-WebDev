@@ -1,0 +1,50 @@
+body{
+    perspective: 900px;
+}
+
+.container{
+    width: 700px;
+    height: 400px;
+    /* background-color: orange; */
+    margin: auto;
+    border: 2px solid black;
+    position: relative;
+    transform-style: preserve-3d;
+    transition: 2s;
+    margin-top: 150px;
+}
+
+.card1,
+.card2{
+    /* height: 200px;
+    width: 200px; */
+    height: 100%;
+    width: 100%;
+    position: absolute;
+    top: 0;
+    left: 0;
+}
+
+.card1{
+    background-color: orange;
+    background-image: url('2_transform3d\raju-happy-face-phir-hera-pheri.jpg');
+    background-repeat: no-repeat;
+    background-size: cover;
+    
+ 
+   
+    /* transform: rotateY(180deg); */
+}
+
+.card2{
+    /* background-color: royalblue; */
+    font-size: 40px;
+    transform: rotateY(180deg);
+    /* transform: rotateY(180deg); */
+    backface-visibility: hidden;
+    z-index: 1;
+}
+
+.container:hover{
+    transform: rotateY(180deg);
+}

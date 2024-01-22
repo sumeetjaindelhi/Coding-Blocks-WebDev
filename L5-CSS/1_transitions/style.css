@@ -1,0 +1,23 @@
+.container
+{
+    margin: auto;
+    height: 250px;
+    background-color: orange;
+    width: 200px;
+    border: 3px solid black;
+    margin-top: 250px;
+   
+    transition-duration: 2s;
+    transition-timing-function: cubic-bezier(0.96, 0.10, 0, 1.05);
+
+}
+.container:hover{
+
+    background-color: beige;
+    /* border-radius: 45%; */
+    transform: rotatey(180deg);
+    /* transform: skewy(40deg); */
+     /* transform: scalex(2);    */
+    /* x axis pe 2 guna faiyl jayega */
+    
+}

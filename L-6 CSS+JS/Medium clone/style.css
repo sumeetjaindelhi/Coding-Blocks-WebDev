@@ -1,0 +1,68 @@
+.navbar{
+height:70px;
+width: 100%;
+border-bottom: 1px solid black;
+z-index: 0;
+
+}
+.nav-logo{
+    height: 40px;
+    width: 150px;
+    background-image: url('https://miro.medium.com/v2/resize:fit:8978/1*s986xIGqhfsN8U--09_AdA.png');
+    background-repeat: no-repeat;
+    background-size: contain;
+    margin-left: 5%;
+}
+.nav-links{
+    width:40%;
+    font-weight: 2;
+    
+
+}
+.n-items{
+    text-decoration: none;
+    color: aliceblue;
+    font-weight: 500;
+}
+.button{
+    width:95px;
+    height:auto;
+    border-radius: 27%;
+}
+.box{
+    height: 500px;
+    width:100%;
+    
+}
+.container{
+    font-size: 50px;
+    position: absolute;
+    margin-top: 150px;
+    
+    
+}
+.headingc{
+    margin-left: 150px;
+    width: 40%;
+
+   
+    
+}
+.header{
+    font-family: gt-super, Georgia, Cambria, "Times New Roman", Times, serif;
+    font-size: 80px;
+    font-weight: 200;
+   
+}
+.messages{
+    font-size: 24px;
+    font-weight: 300;
+    
+
+}
+.footer{
+    
+    border-radius: 27%;
+    font-size: 2px;
+    width: 35%;
+}
