@@ -1,1 +1,0 @@
-developed a khund ki api +post request ke bare me seekha
