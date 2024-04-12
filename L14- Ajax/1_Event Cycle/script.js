@@ -14,9 +14,9 @@ father.addEventListener("click",(e) => {
   true
 );
 
-child.addEventListener("tab",(e) => {
+child.addEventListener("click",(e) => {
     console.log("Clicked child");
   },
-  true
+  false
 );
 //   yeh event cycle hai true paramater me toh parent to child chalega and false me child to parent (default)
