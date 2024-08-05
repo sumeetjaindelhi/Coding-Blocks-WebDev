@@ -1,116 +1,252 @@
-import path from "path";
 import ErrorHandler from "../utils/ErrorHandler.js";
-import DatauriParser from "datauri/parser.js";
-import uploadOnCloudinary from "../utils/uploadOnCloudinary.js";
-import User from "../models/user.js";
+import Restaurant from "../models/restaurant.js";
 import { responseHandler } from "../utils/responseHandler.js";
-import bcrypt from "bcrypt";
+import { uploadBatchOnCloudinary } from "../utils/uploadOnCloudinary.js";
+import { resolve } from "path/win32";
 
-const generateAccessTokenAndRefereshToken = async (userId) => {
+export const postAddReview = responseHandler(async (req, res, next) => {
+    const { restaurant_name, rating, message } = req.body;
+    const { userId, name } = req.user;
+    console.log(restaurant_name, rating, message, userId, name);
     try {
-        const user = await User.findById(userId);
-        const accessToken = await user.generateAccessToken();
-        const refreshToken = await user.generateRefreshToken();
-        user.refreshToken = refreshToken;
-        // user.accessToken = accessToken;
+        const restaurant = await Restaurant.findOne({ name: restaurant_name });
+        if (!restaurant) {
+            throw new ErrorHandler(404, "Restaurant not found");
+        }
 
-        await user.save();
+        if (userId.toString() === restaurant.ownerId.toString()) {
+            throw new ErrorHandler(400, "You can't review your own restaurant");
+        }
 
-        return { accessToken, refreshToken };
+        if (Number(rating) < 1 || Number(rating) > 5) {
+            throw new ErrorHandler(400, "Rating must be between 1 and 5");
+        }
+        const response = await uploadBatchOnCloudinary(req.files);
+        const imageUrl = [];
+        for (let i = 0; i < response.length; i++) {
+            imageUrl.push({
+                "url": response[i].url
+            });
+        }
 
-    } catch (err) {
-        throw new ApiError(500, "Something went wrong while generating refresh and access token");
-    }
-}
-
-export const postSignup = responseHandler(async (req, res, next) => {
-    const requiredFields = ["username", "password", "email", "name"];
-    const bodyFields = Object.keys(req.body);
-    const missingFields = requiredFields.filter((field) => !bodyFields.includes(field));
-
-    const { username, password, email, name } = req.body;
-    if (missingFields.length > 0) {
-        throw new ErrorHandler(401, `Details missing, provide ${missingFields.join(',')} to signup!`);
-    }
-
-    // Check if the user is already present or not
-    const existingUser = await User.findOne({
-        $or: [
-            { username },
-            { email }
-        ]
-    });
-    console.log(existingUser)
-    if (existingUser) {
-        throw new ErrorHandler(401, "User already exists, try with another username or email!");
-    }
-
-    // If user isn't present create the user now
-    try {
-        console.log(req.file);
-        // const parser = new DatauriParser();
-        // const data = parser.format(path.extname(req.file.originalname), req.file.buffer);
-        // console.log(data)
-        const response = await uploadOnCloudinary(req.file.path);
-
-        let newUser = await User.create({
-            username: username.toLowerCase(),
-            password,
-            email: email.toLowerCase(),
-            name: name.toLowerCase(),
-            image: response.url
-        })
-
-        return res.status(200).json(newUser);
+        const review = {
+            username: name,
+            rating: +rating,
+            message,
+            userId,
+            images: imageUrl,
+        };
+        restaurant.reviews.push(review);
+        await restaurant.save();
+        res.status(201).json({
+            success: true,
+            message: "Review added successfully",
+            review,
+        });
     } catch (error) {
-        console.log(error)
-        throw new ErrorHandler(500, "Error while new signup");
+        throw new ErrorHandler(error.statusCode || 500, error.message);
+    }
+
+
+})
+
+
+
+export const postUpdateReview = responseHandler(async (req, res, next) => {
+    const { reviewId } = req.params;
+    const { restaurant_name } = req.body;
+    const { rating, message } = req.body;
+    const { userId } = req.user;
+    try {
+        const restaurant = await Restaurant.findOne({ name: restaurant_name });
+        if (!restaurant) {
+            throw new ErrorHandler(404, "Restaurant not found to update the review");
+        }
+        const index = restaurant["reviews"].findIndex(r => r._id.toString() == reviewId.toString());
+        if (index === -1) {
+            throw new ErrorHandler(404, "Review not found, that you are trying to update");
+        }
+        if (userId.toString() !== restaurant["reviews"][index].userId.toString()) {
+            throw new ErrorHandler(401, "You are not authorized to update this review");
+        }
+
+        if (Number(rating) < 1 || Number(rating) > 5) {
+            throw new ErrorHandler(400, "Rating must be between 1 and 5");
+        }
+
+        if (rating) restaurant["reviews"][index].rating = +rating;
+        if (message) restaurant["reviews"][index].message = message;
+        await restaurant.save();
+        res.status(200).json({
+            success: true,
+            message: "Review updated successfully",
+            restaurant,
+        });
+
+    } catch (error) {
+        throw new ErrorHandler(error.statusCode || 500, error.message);
+    }
+
+})
+
+
+
+
+export const getDeleteReview = responseHandler(async (req, res, next) => {
+    const { reviewId } = req.params;
+    const { restaurant_name } = req.query;
+    const { userId } = req.user;
+
+    try {
+        const restaurant = await Restaurant.findOne({ name: restaurant_name });
+        if (!restaurant) {
+            throw new ErrorHandler(404, "Restaurant not found to update the review");
+        }
+        const index = restaurant["reviews"].findIndex(r => r._id.toString() == reviewId.toString());
+        if (index === -1) {
+            throw new ErrorHandler(404, "Review not found, that you are trying to update");
+        }
+        if (userId.toString() !== restaurant["reviews"][index].userId.toString()) {
+            throw new ErrorHandler(401, "You are not authorized to update this review");
+        }
+        await restaurant["reviews"].splice(index, 1);
+        await restaurant.save();
+        res.status(200).json({
+            success: true,
+            message: "Review deleted successfully",
+            restaurant,
+        });
+
+    } catch (error) {
+        throw new ErrorHandler(error.statusCode || 500, error.message);
+    }
+
+})
+
+
+export const getAllReviews = responseHandler(async (req, res, next) => {
+    const { restaurant_name } = req.query;
+
+    try {
+        const restaurant = await Restaurant.findOne({ name: restaurant_name });
+        if (!restaurant) {
+            throw new ErrorHandler(404, "Restaurant not found to update the review");
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Reviews fetched successfully",
+            reviews: restaurant["reviews"],
+        });
+
+    } catch (error) {
+        throw new ErrorHandler(error.statusCode || 500, error.message);
     }
 })
 
 
 
-export const postLogin = responseHandler(async (req, res, next) => {
-    const { username, password, email } = req.body;
+
+
+
+export const getReview = responseHandler(async (req, res, next) => {
+    const { reviewId } = req.params;
+    const { restaurant_name } = req.query;
+
     try {
-        let existingUser = await User.findOne({
-            $or: [
-                { username },
-                { email }
-            ]
+        const restaurant = await Restaurant.findOne({ name: restaurant_name });
+        if (!restaurant) {
+            throw new ErrorHandler(404, "Restaurant not found to update the review");
+        }
+        const index = restaurant["reviews"].findIndex(r => r._id.toString() == reviewId.toString());
+        if (index === -1) {
+            throw new ErrorHandler(404, "Review not found, that you are trying to update");
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Review fetched successfully",
+            review: restaurant["reviews"][index]
         });
 
-        if (!existingUser) {
-            throw new ErrorHandler(400, "Please provide correct username or email");
+    } catch (error) {
+        throw new ErrorHandler(error.statusCode || 500, error.message);
+    }
+})
+
+
+
+
+
+async function giveDelay() {
+    return new Promise((resolve, reject)=>{
+        setTimeout(() => {
+            resolve();
+        }, 1000);
+    })
+}
+
+
+export const getRestaurants = responseHandler(async (req, res, next) => {
+    try {
+        const restaurants = await Restaurant.find({});
+
+
+        if (!restaurants) {
+            throw new ErrorHandler(404, "No Restaurants found!");
         }
 
-        const isMatch = await bcrypt.compare(password, existingUser.password);
-
-        if (!isMatch) {
-            throw new ErrorHandler(400, "Incorrect password");
-        }
-
-        const { accessToken, refreshToken } = await generateAccessTokenAndRefereshToken(existingUser._id);
-        // console.log(refreshToken);
-        // console.log(accessToken);
-        const options = {
-            httpOnly: true
-        }
-
-        let user = await User.findOne({
-            _id: existingUser._id
-        }).select("-refreshToken -password")
-
-        return res
-            .status(200)
-            .cookie("accessToken", accessToken, options)
-            .cookie("refreshToken", refreshToken, options)
-            .json({
-                user,
-                message: "Successfully Logged In"
-            })
+        res.status(200).json({
+            success: true,
+            message: "Restaurants fetched successfully",
+            restaurants
+        });
 
     } catch (error) {
-        throw new ErrorHandler(500, "Not able to login right now!");
+        throw new ErrorHandler(error.statusCode || 500, error.message);
+    }
+})
+
+
+
+export const getRestaurant = responseHandler(async (req, res, next) => {
+    const {restaurant_id} = req.params;
+    try {
+        const restaurant = await Restaurant.findOne({_id: restaurant_id});
+        if (!restaurant) {
+            throw new ErrorHandler(404, "No Restaurants found!");
+        }
+
+        res.status(200).json({
+            success: true,
+            message: "Restaurant fetched successfully",
+            restaurant
+        });
+
+    } catch (error) {
+        throw new ErrorHandler(error.statusCode || 500, error.message);
+    }
+})
+
+
+
+export const getAllFoodItems = responseHandler(async (req, res, next) => {
+    let {restaurant_id} = req.params;
+    const { category } = req.query;
+    try {
+        let restaurant = await Restaurant.findOne({ _id: restaurant_id });
+        if (!restaurant) {
+            throw new ErrorHandler(401, "Cannot get food, Restaurant not found");
+        }
+        const index = restaurant["cusines"].findIndex((item) => item.category === category);
+        if (index == -1) {
+            throw new ErrorHandler(401, "Cannot get food, Restaurant does not have this category");
+        }
+        res.status(200).json({
+            message: "Food fetched successfully",
+            data: restaurant["cusines"][index]["food"]
+        })
+    } catch (error) {
+        throw new ErrorHandler(error.statusCode || 500, (error.message || "Cannot update food right now!"));
     }
 })

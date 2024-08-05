@@ -46,6 +46,12 @@ const userSchema = new Schema({
             ]
         }
     ],
+    cart: [
+        {
+            food: Object,
+            quantity: Number
+        }
+    ],
     password: {
         type: String,
         required: true
@@ -59,8 +65,7 @@ const userSchema = new Schema({
 
 
 userSchema.pre('save', function (next) {
-    // if (!this.isModified("password")) return;
-    console.log("Here");
+    if (!this.isModified("password")) return next();
 
     const user = this;
 
@@ -93,7 +98,8 @@ userSchema.methods.generateAccessToken = async function () {
             userId: this._id,
             email: this.email,
             username: this.username,
-            name: this.name
+            name: this.name,
+            cart: this.cart
         },
         process.env.ACCESS_TOKEN_KEY
         ,
